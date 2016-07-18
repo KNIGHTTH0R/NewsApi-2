@@ -14,6 +14,10 @@ use Nelmio\ApiDocBundle\Annotation\ApiDoc;
  */
 class NewsController extends FOSRestController
 {
+    use FormErrorsTrait;
+
+    const EMPTY_RESPONSE = '';
+
     /**
      * @ApiDoc(
      *  description="Get news action",
@@ -24,6 +28,10 @@ class NewsController extends FOSRestController
      *          "dataType"="integer",
      *          "requirement"="\d+"
      *      }
+     *  },
+     *  statusCodes={
+     *      200 = "News found",
+     *      404 = "News not found"
      *  }
      * )
      *
@@ -38,40 +46,11 @@ class NewsController extends FOSRestController
         return new Response($this->get('jms_serializer')->serialize($news, 'json'));
     }
 
-    /**
-     * @ApiDoc(
-     *  description="Get news array by user",
-     *  output="AppBundle\Entity\News",
-     *  requirements={
-     *      {
-     *          "name"="userId",
-     *          "dataType"="integer",
-     *          "requirement"="\d+"
-     *      }
-     *  }
-     * )
-     *
-     * @param $userId
-     *
-     * @return Response
-     */
-    public function getUserAction($userId)
-    {
-        $userManager = $this->get('fos_user.user_manager');
-        $user = $userManager->findUserBy(['id'=>$userId]);
 
-        if (!$user) {
-            return new Response('User not found', Response::HTTP_NOT_FOUND);
-        }
-
-        $news = $this->get('news_manager')->getByUser($user);
-
-        return new Response($this->get('jms_serializer')->serialize($news, 'json'));
-    }
 
     /**
      * @ApiDoc(
-     *  description="Get news array by status",
+     *  description="Get news list by status",
      *  output="AppBundle\Entity\News",
      *  requirements={
      *      {
@@ -79,6 +58,9 @@ class NewsController extends FOSRestController
      *          "dataType"="integer",
      *          "requirement"="\d+"
      *      }
+     *  },
+     *  statusCodes={
+     *      200 = "List of news with given status",
      *  }
      * )
      *
@@ -97,10 +79,15 @@ class NewsController extends FOSRestController
      * @ApiDoc(
      *  description="Create news",
      *  input="AppBundle\Form\NewsType",
-     *  output="AppBundle\Entity\News"
+     *  output="AppBundle\Entity\News",
+     *  statusCodes={
+     *      201 = "News Created",
+     *      400 = "Validation errors"
+     *  }
      * )
      *
      * @param Request $request
+     *
      * @return JsonResponse
      */
     public function postAction(Request $request)
@@ -110,22 +97,25 @@ class NewsController extends FOSRestController
         $form->handleRequest($request);
 
         if ($form->isValid()) {
-            $news->setUser($this->getUser());
-            $news->setStatus(News::STATUS_NEW);
 
-            $this->get('news_manager')->create($news);
+
+            $this->get('news_manager')->create($news, $this->getUser());
 
             return new Response($this->get('jms_serializer')->serialize($news, 'json'), Response::HTTP_CREATED);
         }
 
-        return new Response('', Response::HTTP_BAD_REQUEST);
+        return new Response($this->getFormErrors($form), Response::HTTP_BAD_REQUEST);
     }
 
     /**
      * @ApiDoc(
      *  description="Edit news",
      *  input="AppBundle\Form\NewsType",
-     *  output="AppBundle\Entity\News"
+     *  output="AppBundle\Entity\News",
+     *  statusCodes={
+     *      200 = "News Updated",
+     *      400 = "Validation errors"
+     *  }
      * )
      *
      * @param Request $request
@@ -137,21 +127,17 @@ class NewsController extends FOSRestController
     {
         $news = $this->get('news_manager')->get($newsId);
 
-        if ($news->getUser()->getId() != $this->getUser()->getId()) {
-            return new Response('', Response::HTTP_FORBIDDEN);
-        }
-
         $form = $this->createForm(NewsType::class, $news, ['method' => 'PUT']);
 
         $form->handleRequest($request);
 
         if ($form->isValid()) {
-            $this->get('news_manager')->update($news);
+            $this->get('news_manager')->update($news, $this->getUser());
 
             return new Response($this->get('jms_serializer')->serialize($news, 'json'));
         }
 
-        return new Response('', Response::HTTP_BAD_REQUEST);
+        return new JsonResponse($this->getFormErrors($form), JsonResponse::HTTP_BAD_REQUEST);
     }
 
     /**
@@ -163,6 +149,11 @@ class NewsController extends FOSRestController
      *          "dataType"="integer",
      *          "requirement"="\d+"
      *      }
+     *  },
+     *  statusCodes={
+     *      200 = "News Deleted",
+     *      403 = "News not owned by user",
+     *      404 = "News not found"
      *  }
      * )
      *
@@ -172,8 +163,10 @@ class NewsController extends FOSRestController
      */
     public function deleteAction($newsId)
     {
-        $this->get('news_manager')->delete($newsId);
+        $news = $this->get('news_manager')->get($newsId);
 
-        return new Response('', Response::HTTP_OK);
+        $this->get('news_manager')->delete($news, $this->getUser());
+
+        return new Response(self::EMPTY_RESPONSE, Response::HTTP_OK);
     }
 }

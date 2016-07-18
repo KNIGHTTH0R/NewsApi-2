@@ -3,8 +3,9 @@ namespace AppBundle\Services;
 
 use AppBundle\Entity\News;
 use AppBundle\Exception\NewsNotFoundException;
+use AppBundle\Exception\NewsNotOwnedByGivenUserException;
 use AppBundle\Repository\NewsRepository;
-use FOS\UserBundle\Entity\User;
+use AppBundle\Entity\User;
 
 /**
  * Class NewsModel
@@ -56,30 +57,56 @@ class NewsManager
 
     /**
      * @param News $news
+     * @param User $user
      *
      *
      * @return int
      */
-    public function create(News $news)
+    public function create(News $news, User $user)
     {
+        $news->setUser($user);
+        $news->setStatus(News::STATUS_NEW);
+
         $this->newsRepository->save($news);
     }
 
     /**
      * @param News $news
      *
-     * @throws NewsNotFoundException
+     * @throws NewsNotOwnedByGivenUserException
      */
-    public function update(News $news)
+    public function update(News $news, User $user)
     {
+        if (!$this->isNewsOwnedByUser($news, $user)) {
+            throw new NewsNotOwnedByGivenUserException();
+        }
+
         $this->newsRepository->update($news);
     }
 
     /**
-     * @param $newsId
+     * @param News $news
+     * @param User $user
+     *
+     * @throws NewsNotOwnedByGivenUserException
      */
-    public function delete($newsId)
+    public function delete(News $news, User $user)
     {
-        $this->newsRepository->delete($this->get($newsId));
+        if (!$this->isNewsOwnedByUser($news, $user)) {
+            throw new NewsNotOwnedByGivenUserException();
+        }
+
+        $this->newsRepository->delete($news);
+    }
+
+    /**
+     * @param News $news
+     * @param User $user
+     *
+     * @return bool
+     */
+    private function isNewsOwnedByUser(News $news, User $user)
+    {
+        return $news->getUser() == $user;
     }
 }

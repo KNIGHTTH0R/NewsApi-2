@@ -82,8 +82,8 @@ fos_user:
     firewall_name: api                                  # Seems to be used when registering user/reseting password,
     user_class: AppBundle\Entity\User
     from_email:
-        address:        olowek1988@gmail.com
-        sender_name:    olowek1988@gmail.com
+        address:        "%mailer_user%"
+        sender_name:    "%mailer_user%"
     registration:
         confirmation:
             enabled:    true

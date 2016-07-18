@@ -3,7 +3,7 @@
 namespace AppBundle\Controller;
 
 use FOS\RestBundle\Controller\FOSRestController;
-use Symfony\Component\BrowserKit\Response;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -24,7 +24,7 @@ class RegisterController extends FOSRestController
      *  input="FOS\UserBundle\Form\Type\RegistrationFormType",
      *  output="AppBundle\Entity\User",
      *  statusCodes={
-     *      201 = "Returned when successful",
+     *      201 = "Returned when user registered",
      *      400 = "Returned when can't register user"
      *  }
      * )
@@ -43,7 +43,7 @@ class RegisterController extends FOSRestController
         $process = $formHandler->process($confirmationEnabled);
         if ($process) {
             $user = $form->getData();
-            return new Response($user, JsonResponse::HTTP_CREATED);
+            return new Response($this->get('jms_serializer')->serialize($user, 'json'), Response::HTTP_CREATED);
         }
 
         $errors = $this->getFormErrors($form);
@@ -59,6 +59,10 @@ class RegisterController extends FOSRestController
      *          "name"="token",
      *          "dataType"="string"
      *      }
+     *  },
+     *  statusCodes={
+     *      200 = "User confirmed",
+     *      404 = "User with given token not found"
      *  }
      * )
      *
@@ -80,6 +84,6 @@ class RegisterController extends FOSRestController
 
         $this->container->get('fos_user.user_manager')->updateUser($user);
 
-        return new JsonResponse(['confirmed']);
+        return new Response($this->get('jms_serializer')->serialize($user, 'json'), Response::HTTP_OK);
     }
 }

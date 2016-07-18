@@ -2,8 +2,12 @@
 
 namespace AppBundle\Controller;
 
+use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
 
+/**
+ * Class FormErrorsTrait
+ */
 trait FormErrorsTrait
 {
     /**
@@ -16,8 +20,9 @@ trait FormErrorsTrait
         $er = [];
         $errors = $form->getErrors(true);
         if ($errors->count()) {
+            /** @var FormError $error */
             foreach ($errors as $error) {
-                $er[] = $error->getMessage();
+                $er[$error->getOrigin()->getName()] = $error->getMessage();
             }
         }
 

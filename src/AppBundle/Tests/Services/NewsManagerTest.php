@@ -106,13 +106,33 @@ class NewsManagerTest extends \PHPUnit_Framework_TestCase
     public function testCreate()
     {
         $news = new News();
+        $user = new User();
 
         $this->newsRepositoryMock
             ->expects($this->once())
             ->method('save')
             ->with($news);
 
-        $this->sut->create($news);
+        $this->sut->create($news, $user);
+        $this->assertEquals(News::STATUS_NEW, $news->getStatus());
+    }
+
+    /**
+     * @covers ::create
+     */
+    public function testUpdate_ShouldThrowException_IfUserIsNotOwner()
+    {
+        $this->setExpectedException('AppBundle\Exception\NewsNotOwnedByGivenUserException');
+
+        $news = new News();
+        $user = new User();
+
+        $this->newsRepositoryMock
+            ->expects($this->never())
+            ->method('update')
+            ->with($news);
+
+        $this->sut->update($news, $user);
     }
 
     /**
@@ -121,13 +141,33 @@ class NewsManagerTest extends \PHPUnit_Framework_TestCase
     public function testUpdate()
     {
         $news = new News();
+        $user = new User();
+        $news->setUser($user);
 
         $this->newsRepositoryMock
             ->expects($this->once())
             ->method('update')
             ->with($news);
 
-        $this->sut->update($news);
+        $this->sut->update($news, $user);
+    }
+
+    /**
+     * @covers ::create
+     */
+    public function testDelete_ShouldThrowException_IfUserIsNotOwner()
+    {
+        $this->setExpectedException('AppBundle\Exception\NewsNotOwnedByGivenUserException');
+
+        $news = new News();
+        $user = new User();
+
+        $this->newsRepositoryMock
+            ->expects($this->never())
+            ->method('delete')
+            ->with($news);
+
+        $this->sut->delete($news, $user);
     }
 
     /**
@@ -136,17 +176,14 @@ class NewsManagerTest extends \PHPUnit_Framework_TestCase
     public function testDelete()
     {
         $news = new News();
-
-        $this->newsRepositoryMock
-            ->expects($this->once())
-            ->method('find')
-            ->willReturn($news);
+        $user = new User();
+        $news->setUser($user);
 
         $this->newsRepositoryMock
             ->expects($this->once())
             ->method('delete')
             ->with($news);
 
-        $this->sut->delete($news);
+        $this->sut->delete($news, $user);
     }
 }

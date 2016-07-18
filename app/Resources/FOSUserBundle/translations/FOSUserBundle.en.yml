@@ -1,0 +1,10 @@
+registration:
+    email:
+        subject: Registration email
+        message: |
+            Hi %username%!
+
+            Please confirm registration:
+            %confirmationUrl%
+
+            Thanks!

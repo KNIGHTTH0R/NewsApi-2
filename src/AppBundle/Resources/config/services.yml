@@ -1,0 +1,22 @@
+services:
+    command.oauth_create_client:
+        class: AppBundle\Command\OAuthCreateClientCommand
+        arguments:
+            - @fos_oauth_server.client_manager.default
+        tags:
+            -  { name: console.command }
+
+    app.exception_listener:
+        class: AppBundle\EventListener\ExceptionListener
+        tags:
+            - { name: kernel.event_listener, event: kernel.exception }
+
+    news_repository:
+        class: AppBundle\Repository\NewsRepository
+        factory: ["@doctrine", getRepository]
+        arguments:
+            - "AppBundle:News"
+
+    news_manager:
+        class: AppBundle\Services\NewsManager
+        arguments: [@news_repository]

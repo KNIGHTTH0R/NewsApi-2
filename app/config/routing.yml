@@ -1,0 +1,20 @@
+NelmioApiDocBundle:
+    resource: "@NelmioApiDocBundle/Resources/config/routing.yml"
+    prefix:   /api/doc
+
+fos_oauth_server_token:
+    resource: "@FOSOAuthServerBundle/Resources/config/routing/token.xml"
+
+app_bundle:
+    prefix: /account
+    resource: "@AppBundle/Resources/config/routing.yml"
+
+app_bundle_news:
+    type: rest
+    prefix: /news
+    resource: AppBundle\Controller\NewsController
+
+app_bundle_user:
+    type: rest
+    prefix: /user
+    resource: AppBundle\Controller\UserController
